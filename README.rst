@@ -26,9 +26,6 @@ for separating settings from code.
     :target: https://crate.io/packages/python-decouple/
     :alt: Latest PyPI version
 
-.. image:: https://pypip.in/d/python-decouple/badge.png
-    :target: https://crate.io/packages/python-decouple/
-    :alt: Number of PyPI downloads
 
 Why?
 ----
@@ -133,7 +130,7 @@ Example: How do I use it with Django?
 Given that I have a ``.env`` file at my repository root directory, here is a snippet of my ``settings.py``.
 
 I also recommend using `unipath <https://pypi.python.org/pypi/Unipath>`_
-and `dj-datatabase-url <https://pypi.python.org/pypi/dj-database-url/>`_.
+and `dj-database-url <https://pypi.python.org/pypi/dj-database-url/>`_.
 
 .. code-block:: python
 
@@ -180,6 +177,21 @@ If ``SECRET_KEY`` is not present on the ``.env``, *decouple* will raise an ``Und
 
 This *fail fast* policy helps you avoid chasing misbehaviors when you eventually forget a parameter.
 
+Overriding config files with environment variables
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Some times you may want to change a parameter value without having to edit the ``.ini`` or ``.env`` files.
+
+Since version 3.0, *decouple* respect the *unix way*.
+Therefore environment variables have precedence over config files.
+
+To override a config parameter you can simply do:
+
+.. code-block:: console
+
+    DEBUG=True python manage.py
+
+
 How it works?
 =============
 
@@ -192,14 +204,15 @@ How it works?
 
 - ``RepositoryIni``
 
-    Can read values from ini files.
+    Can read values from ``os.environ`` and ini files, in that order.
+
+    **Note:** Since version 3.0 *decouple* respects unix precedence of environment variables *over* config files.
 
 - ``RepositoryEnv``
 
-    Can read ``.env`` files and when a parameter does not exist there,
-    it tries to find it on ``os.environ``.
+    Can read values from ``os.environ`` and ``.env`` files.
 
-    This process does **not** change nor add any environment variables.
+    **Note:** Since version 3.0 *decouple* respects unix precedence of environment variables *over* config files.
 
 - ``RepositoryShell``
 
@@ -246,7 +259,7 @@ Let's see some examples for the above mentioned cases:
 
     >>> os.environ['ALLOWED_HOSTS'] = '.localhost, .herokuapp.com'
     >>> config('ALLOWED_HOSTS', cast=lambda v: [s.strip() for s in v.split(',')])
-    ['.localhost,', '.herokuapp.com']
+    ['.localhost', '.herokuapp.com']
 
 As you can see, `cast` is very flexible. But the last example got a bit complex.
 
@@ -259,23 +272,23 @@ Let's improve the last example:
 
 .. code-block:: pycon
 
+    >>> from decouple import Csv
     >>> os.environ['ALLOWED_HOSTS'] = '.localhost, .herokuapp.com'
     >>> config('ALLOWED_HOSTS', cast=Csv())
-    ['.localhost,', '.herokuapp.com']
+    ['.localhost', '.herokuapp.com']
 
 You can also parametrize the *Csv Helper* to return other types of data.
 
 .. code-block:: pycon
 
     >>> os.environ['LIST_OF_INTEGERS'] = '1,2,3,4,5'
-    >>> config('ALLOWED_HOSTS', cast=Csv(int))
+    >>> config('LIST_OF_INTEGERS', cast=Csv(int))
     [1, 2, 3, 4, 5]
 
     >>> os.environ['COMPLEX_STRING'] = '%virtual_env%\t *important stuff*\t   trailing spaces   '
     >>> csv = Csv(cast=lambda s: s.upper(), delimiter='\t', strip=' %*')
-    >>> csv('%virtual_env%\t *important stuff*\t   trailing spaces   ')
+    >>> csv(os.environ['COMPLEX_STRING'])
     ['VIRTUAL_ENV', 'IMPORTANT STUFF', 'TRAILING SPACES']
-    """
 
 License
 =======
